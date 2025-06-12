@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🔐 Image Encryption Tool</title>
+  <style>
+    body {
+      background: url('https://swall.teahub.io/photos/small/69-696337_download-server-wallpaper-windows-server-2008.jpg') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'Segoe UI', sans-serif;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      width: 90%;
+      max-width: 420px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #111827;
+    }
+
+    input[type="file"],
+    input[type="password"],
+    button {
+      width: 90%;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 16px;
+      border: none;
+      outline: none;
+    }
+
+    input[type="password"] {
+      background: #f1f5f9;
+      color: #111827;
+    }
+
+    button {
+      background-color: #3b82f6;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #2563eb;
+    }
+
+    img {
+      display: none;
+      margin-top: 20px;
+      max-width: 100%;
+      border: 2px solid #60a5fa;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>🔐 Image Encryption Tool</h2>
+    <input type="file" id="imageInput"><br>
+    <input type="password" id="password" placeholder="Enter password"><br>
+    <button onclick="encryptImage()">Encrypt & Download</button>
+    <button onclick="decryptImage()">Decrypt & Show</button>
+    <img id="decryptedImage" src="">
+  </div>
+
+  <script>
+    async function getKey(password) {
+      const enc = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        "raw", enc.encode(password),
+        { name: "PBKDF2" }, false, ["deriveKey"]
+      );
+      return await crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt: enc.encode("openpuff-style"),
+          iterations: 100000,
+          hash: "SHA-256"
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    async function encryptImage() {
+      const file = document.getElementById('imageInput').files[0];
+      const password = document.getElementById('password').value;
+      if (!file || !password) return alert("Please select an image and enter a password.");
+
+      const buffer = await file.arrayBuffer();
+      const key = await getKey(password);
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+
+      const encrypted = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        key,
+        buffer
+      );
+
+      const output = new Uint8Array(iv.length + encrypted.byteLength);
+      output.set(iv);
+      output.set(new Uint8Array(encrypted), iv.length);
+
+      const blob = new Blob([output], { type: "application/octet-stream" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "encrypted_image.enc";
+      link.click();
+    }
+
+    async function decryptImage() {
+      const file = document.getElementById('imageInput').files[0];
+      const password = document.getElementById('password').value;
+      if (!file || !password) return alert("Please select the encrypted file and enter the correct password.");
+
+      const buffer = await file.arrayBuffer();
+      const iv = buffer.slice(0, 12);
+      const encrypted = buffer.slice(12);
+      const key = await getKey(password);
+
+      try {
+        const decrypted = await crypto.subtle.decrypt(
+          { name: "AES-GCM", iv },
+          key,
+          encrypted
+        );
+
+        const blob = new Blob([decrypted]);
+        const url = URL.createObjectURL(blob);
+        const img = document.getElementById("decryptedImage");
+        img.src = url;
+        img.style.display = "block";
+      } catch (e) {
+        alert("❌ Incorrect password or corrupted file.");
+      }
+    }
+  </script>
+
+</body>
+</html>
