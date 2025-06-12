@@ -12,7 +12,7 @@ You can run the tool offline by simply opening `image-encryption.html` in your b
 
 ## 📸 Screenshot
 
-![Screenshot](screenshot.png)
+![Screenshot](Image_Encryption.png)
 
 > 📝 Be sure to upload a `screenshot.png` image to the repo root.
 
