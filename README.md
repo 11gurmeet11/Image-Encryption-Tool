@@ -42,5 +42,5 @@ You can run the tool offline by simply opening `image-encryption.html` in your b
 
 1. Clone or download this repository:
    ```bash
-   git clone https://github.com/your-username/image-encryption-tool.git
+   git clone https://github.com/11gurmeet11/image-encryption-tool.git
    cd image-encryption-tool
